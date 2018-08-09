@@ -1,6 +1,17 @@
 # Night Owls Detector
 
-[TODO. There will be project description]
+The script show users names that send a excersive for cheking after 12:00 in their timezone.
+
+# Usage Example
+
+Python 3 should be already installed. Example of script launch on Linux, Python 3.5:
+
+```
+$ python seek_dev_nighters.py
+<username>
+<username>
+<username>
+```
 
 # Project Goals
 
