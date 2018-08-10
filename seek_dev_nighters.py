@@ -3,34 +3,40 @@ import pytz
 import requests
 
 
-def load_attempts(url, total_pages):
-    pages = total_pages
-    for page in range(1, pages+1):
+def load_attempts(url):
+    page = 1
+    params = {"page": page}
+    response = requests.get(url, params=params)
+    while page != (response.json()["number_of_pages"] + 1):
         params = {"page": page}
         response = requests.get(url, params=params)
-        for attemp in response.json()["records"]:
+        for attempt in response.json()["records"]:
             yield {
-                "username": attemp["username"],
-                "timestamp": attemp["timestamp"],
-                "timezone": attemp["timezone"],
+                "username": attempt["username"],
+                "timestamp": attempt["timestamp"],
+                "timezone": attempt["timezone"],
             }
+        page+=1
 
 
 def get_midnighters(users_attempts):
-    for attemp in users_attempts:
-        attemp_timezone = attemp["timezone"]
-        attemp_timestamp = attemp["timestamp"]
-        utc_date = datetime.datetime.utcfromtimestamp(attemp_timestamp)
-        user_timezone = pytz.timezone(attemp_timezone)
-        users_date = user_timezone.normalize(utc_date.astimezone(user_timezone))
-        if users_date.hour <= 7 and users_date.hour >= 0:
-            yield attemp["username"]
+    midnighters = []
+    for attempt in users_attempts:
+        attempt_timezone = attempt["timezone"]
+        attempt_timestamp = attempt["timestamp"]
+        user_timezone = pytz.timezone(attempt_timezone)
+        users_date = datetime.datetime.fromtimestamp(attempt_timestamp,
+            tz=user_timezone)
+        if (users_date.hour <= 7 and users_date.hour >= 0 and
+                attempt["username"] not in midnighters):
+            midnighters.append(attempt["username"])
+    return midnighters
 
 if __name__ == "__main__":
     request_url = "https://devman.org/api/challenges/solution_attempts/"
     response = requests.get(request_url)
-    total_pages = response.json()["number_of_pages"]
-    users_attempts = load_attempts(request_url, total_pages)
+    users_attempts = load_attempts(request_url)
     midnighters = get_midnighters(users_attempts)
+    print("Send their attempts after 12pm:")
     for user in midnighters:
         print(user)
