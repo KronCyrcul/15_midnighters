@@ -5,9 +5,7 @@ import requests
 
 def load_attempts(url):
     page = 1
-    params = {"page": page}
-    response = requests.get(url, params=params)
-    while page != (response.json()["number_of_pages"] + 1):
+    while True:
         params = {"page": page}
         response = requests.get(url, params=params)
         for attempt in response.json()["records"]:
@@ -17,6 +15,8 @@ def load_attempts(url):
                 "timezone": attempt["timezone"],
             }
         page+=1
+        if page == (response.json()["number_of_pages"] + 1):
+            break
 
 
 def get_midnighters(users_attempts):
@@ -27,14 +27,13 @@ def get_midnighters(users_attempts):
         user_timezone = pytz.timezone(attempt_timezone)
         users_date = datetime.datetime.fromtimestamp(attempt_timestamp,
             tz=user_timezone)
-        if (users_date.hour <= 7 and users_date.hour >= 0 and
-                attempt["username"] not in midnighters):
+        if 0 <= users_date.hour <= 7:
             midnighters.append(attempt["username"])
-    return midnighters
+    return set(midnighters)
+
 
 if __name__ == "__main__":
     request_url = "https://devman.org/api/challenges/solution_attempts/"
-    response = requests.get(request_url)
     users_attempts = load_attempts(request_url)
     midnighters = get_midnighters(users_attempts)
     print("Send their attempts after 12pm:")
